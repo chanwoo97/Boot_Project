@@ -77,6 +77,9 @@ dependencies {
     // 원본 이미지 -> 작은 이미지 변환 도구,
     // https://mvnrepository.com/artifact/net.coobird/thumbnailator
     implementation group: 'net.coobird', name: 'thumbnailator', version: '0.4.20'
+
+    // 9
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '3.5.3'
 }
 
 tasks.named('test') {
@@ -94,13 +97,3 @@ sourceSets {
 }
 compileJava.dependsOn('clean')
 // Querydsl  설치, 순서4
-
-dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation 'org.springframework.boot:spring-boot-starter-json'
-
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
-}
-
-
