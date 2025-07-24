@@ -1,5 +1,7 @@
 package com.busanit501.boot_project.config;
 
+import com.busanit501.boot_project.security.CustomUserDetailsService;
+import com.busanit501.boot_project.security.handler.Custom403Handler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
@@ -17,6 +19,8 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 
+import javax.sql.DataSource;
+
 @Log4j2
 @Configuration
 @RequiredArgsConstructor
@@ -26,10 +30,10 @@ import org.springframework.security.web.authentication.rememberme.PersistentToke
 // 이전 문법 ://@EnableGlobalMethodSecurity(prePostEnabled = true)
 @EnableMethodSecurity()
 public class CustomSecurityConfig {
-    // 자동 로그인 순서1,
-//    private final DataSource dataSource;
-    // 시큐리티에서 로그인 처리를 담당하는 도구
-//    private final CustomUserDetailsService customUserDetailsService;
+    // 자동 로그인 순서1, 디비 접근 도구
+    private final DataSource dataSource;
+    // 시큐리티에서 로그인 처리를 담당하는 도구-,로그인한 유저 처리를 담당하는 부서
+    private final CustomUserDetailsService customUserDetailsService;
     // 자동 로그인 순서1,
 
     //순서1,
@@ -95,28 +99,28 @@ public class CustomSecurityConfig {
         // /member/login?logout
         // 멤버 컨트롤러,
         //
-//        http.logout(
-//                logout -> logout.logoutUrl("/member/logout")
-//                        .logoutSuccessUrl("/member/login?logout")
-//
-//        );
+        http.logout(
+                logout -> logout.logoutUrl("/member/logout")
+                        .logoutSuccessUrl("/member/login?logout")
+
+        );
 
         // 자동 로그인 순서2,
-//        http.rememberMe(
-//                httpSecurityRememberMeConfigurer
-//                        -> httpSecurityRememberMeConfigurer.key("12345678")
-//                        .tokenRepository(persistentTokenRepository()) // 밑에서, 토큰 설정 추가해야해서,
-//                        .userDetailsService(customUserDetailsService)
-//                        .tokenValiditySeconds(60*60*24*30) //30일
-//        );
+        http.rememberMe(
+                httpSecurityRememberMeConfigurer
+                        -> httpSecurityRememberMeConfigurer.key("12345678")
+                        .tokenRepository(persistentTokenRepository()) // 밑에서, 토큰 설정 추가해야해서,
+                        .userDetailsService(customUserDetailsService)
+                        .tokenValiditySeconds(60*60*24*30) //30일
+        );
 
         // 자동 로그인 순서2,
 
         // 403 에러 페이지 연결 하기.
-//        http.exceptionHandling(
-//                exception -> {
-//                    exception.accessDeniedHandler(accessDeniedHandler());
-//                });
+        http.exceptionHandling(
+                exception -> {
+                    exception.accessDeniedHandler(accessDeniedHandler());
+                });
 
         //카카오 로그인 API 설정
 //        http.oauth2Login(
@@ -134,13 +138,13 @@ public class CustomSecurityConfig {
     }
 
     // 자동 로그인 순서3,
-//    @Bean
-//    public PersistentTokenRepository persistentTokenRepository() {
-//        // 시큐리에서 정의 해둔 구현체
-//        JdbcTokenRepositoryImpl repo = new JdbcTokenRepositoryImpl();
-//        repo.setDataSource(dataSource);
-//        return repo;
-//    }
+    @Bean
+    public PersistentTokenRepository persistentTokenRepository() {
+        // 시큐리티에서 정의 해둔 구현체
+        JdbcTokenRepositoryImpl repo = new JdbcTokenRepositoryImpl();
+        repo.setDataSource(dataSource);
+        return repo;
+    }
     // 자동 로그인 순서3,
 
 
@@ -163,10 +167,10 @@ public class CustomSecurityConfig {
     // 403 핸들러 추가.
     // 설정 클래스에 추가하기.
     // 레스트용, Content-Type, application/json 형태 일 때만 동작을하고,
-//    @Bean
-//    public AccessDeniedHandler accessDeniedHandler() {
-//        return new Custom403Handler();
-//    }
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler() {
+        return new Custom403Handler();
+    }
 
     // 소셜 로그인 후, 후처리 추가, 설정,
 //    @Bean

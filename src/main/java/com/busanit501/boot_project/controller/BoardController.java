@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -35,7 +37,7 @@ public class BoardController {
     private final BoardService boardService;
 
     @GetMapping("/list")
-    public void list(PageRequestDTO pageRequestDTO, Model model) {
+    public void list(@AuthenticationPrincipal UserDetails user,PageRequestDTO pageRequestDTO, Model model) {
         // 서비스 외주 이용해서, 데이터 가져오기
         // 1, 기존, 페이징 정보와, 검색 정보만 이용한 리스트 목록,
 //        PageResponseDTO<BoardDTO> responseDTO = boardService.list(pageRequestDTO);
@@ -46,12 +48,14 @@ public class BoardController {
         log.info("BoardController에서, list, responseDTO : {}", responseDTO);
         // 서버 -> 화면으로 데이터 전달.
         model.addAttribute("responseDTO", responseDTO);
+        model.addAttribute("user", user);
     }
 
     //    등록화면 작업, get
     @PreAuthorize("hasRole('USER')") // 로그인한 유저만 접근 가능.
-    @GetMapping("/register")
-    public void register() {
+    @GetMapping("/register") // @AuthenticationPrincipal: 시큐리티에 로그인 된 정보를 관리하는 도구
+    public void register(@AuthenticationPrincipal UserDetails user, Model model) {
+        model.addAttribute("user", user);
     }
 
     // 등록 처리, post
@@ -73,24 +77,29 @@ public class BoardController {
 
     // 상세보기 화면, 수정하는 화면 동일.
     // 읽기 전용, 수정이 가능한 input
+    @PreAuthorize("isAuthenticated()") // 로그인한 유저만 상세보기 , 수정폼 접근 가능.
     @GetMapping({"/read", "/update"})// 화면 경로 : /board/read.html 작업함.
     // 예시
     //http://localhost:8080/board/list?type=tcw&keyword=1&page=2
     // type, keyword, page, -> PageRequestDTO의 멤버 이름과 동일함.
     // 그래서, 자동 수집함. !!중요!!
     // 자동 화면으로 전달도 함. !!중요!!
-    public void read(Long bno, PageRequestDTO pageRequestDTO,
+    public void read(@AuthenticationPrincipal UserDetails user,Long bno, PageRequestDTO pageRequestDTO,
                      Model model) {
         // 누구에게 외주 줄까요? BoardService  외주,
         BoardDTO boardDTO = boardService.readOne(bno);
         log.info("BoardController 에서, read 작업중 boardDTO: " + boardDTO);
         // 서버 -> 화면, 데이터 전달,
         model.addAttribute("dto", boardDTO);
+        model.addAttribute("user", user);
 
     }
 
     // 수정 처리 post 작업,
     @PostMapping("/update")
+    // principal.username : 로그인한 유저,
+    // #boardDTO.writer : 게시글 작성자,
+    @PreAuthorize("principal.username == #boardDTO.writer")
     public String update(PageRequestDTO pageRequestDTO,
                          @Valid BoardDTO boardDTO,
                          BindingResult bindingResult,
@@ -117,6 +126,7 @@ public class BoardController {
     // 추가, 첨부이미지들도 같이 삭제 진행해야함.
     // 삭제 준비물 1) 첨부 이미지들의 파일 목록 필요함.
     // 서버에서 받으려면, DTO 자동 수집
+    @PreAuthorize("principal.username == #boardDTO.writer")
     public String remove(BoardDTO boardDTO, RedirectAttributes redirectAttributes) {
         log.info("BoardController 에서, remove 작업중 , 넘어온 bno 확인: " + boardDTO.getBno());
         boardService.remove(boardDTO.getBno());
